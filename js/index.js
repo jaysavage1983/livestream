@@ -572,7 +572,7 @@ async function messageReceived (messageObj, isFromHistory) {
 
 //  HTML for messages we have sent ourselves
 function createMessageSent (messageObj, messageIsRead) {
-  var readSrc = './img/icons/sent.png'
+  var readSrc = './img/icons/read.png'
   var profileUrl = lookupProfileUrl(messageObj.publisher)
   var name = lookupUsername(messageObj.publisher)
   var newMsg = document.createElement('div')
@@ -634,7 +634,7 @@ function createMessageReceived (messageObj) {
       <div class='temp-read-indicator'>
           <img id='message-check-${
             messageObj.timetoken
-          }' class='${extraReceiptStyle}' src='./img/icons/sent.png' height='10px'>
+          }' class='${extraReceiptStyle}' src='./img/icons/read.png' height='10px'>
       </div>
   </div>
 </div>
