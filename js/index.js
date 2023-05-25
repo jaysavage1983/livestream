@@ -312,8 +312,8 @@ function memberLeft (userId) {
         directChatAvatar.classList.add('presence-dot-gray')
         //  And the sidebar variant
         var directChatAvatarS = document.getElementById('user-pres-s' + userId)
-        directChatAvatarS.classList.remove('presence-dot-gray')
-        directChatAvatarS.classList.add('presence-dot-online')
+        directChatAvatarS.classList.remove('presence-dot-online')
+        directChatAvatarS.classList.add('presence-dot-gray')
       }
     }
   }
