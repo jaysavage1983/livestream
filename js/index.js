@@ -88,8 +88,8 @@ function load () {
     return
   }
 
-  //  Create an instance of PubNub by assigning a random user ID.  This is very bad practice in production and 
-  //  you should use an identity unique to that user, assuming they have first logged in and registered with 
+  //  Create an instance of PubNub by assigning a random user ID.  This is very bad practice in production and
+  //  you should use an identity unique to that user, assuming they have first logged in and registered with
   //  your application through your own authentication mechanism / identity provider.
   pubnub = new PubNub({
     publishKey: publish_key,
@@ -155,6 +155,7 @@ function populateOwnData (userId) {
   me.name = lookupUsername(userId)
   me.profileUrl = lookupProfileUrl(userId)
 
+  //  This app is structured to duplicate the JS elements in the side panel for mobile
   document.getElementById('currentUser').innerText = me.name + ' (You)'
   document.getElementById('currentUser-side').innerText = me.name + ' (You)'
   document.getElementById('avatar').src = me.profileUrl
@@ -174,36 +175,47 @@ function lookupProfileUrl (userId) {
 //  Render the HTML for the list of groups on the left of the app, e.g. online users
 function populatePredefinedGroups () {
   var groupList = ''
+  var groupListSide = ''
   var channels = []
   for (const group of predefined_groups.groups) {
-    //  todo for the friends group, put us in a group with the previous and next user contiguously. (1,2,3 is a group, as is 4,5,6)
-    var groupHtml =
-      "<div class='user-with-presence group-row group-row-flex' onclick='launchGroupChat(\"" +
-      group.channel +
-      "\")'><img src='./img/group/" +
-      group.profileIcon +
-      "' class='chat-list-avatar'><div id='unread-" +
-      group.channel +
-      "' class='text-caption presence-dot-online-num' style='visibility: hidden'>0</div>"
-
-    if (typeof group.info === 'undefined') {
-      groupHtml += "<div class='group-name'>" + group.name + '</div></div>'
-    } else {
-      groupHtml +=
-        "<div class='group-name group-name-flex'><div>" +
-        group.name +
-        "</div><div class='text-caption'>" +
-        group.info +
-        '</div></div></div>'
-    }
+    //  This app is structured to duplicate the JS elements in the side panel for mobile
+    var groupHtml = generatePredefinedGroupHTML(group, false)
+    var groupHtmlSide = generatePredefinedGroupHTML(group, true)
     groupList += groupHtml
+    groupListSide += groupHtmlSide
     channels.push(group.channel)
     document.getElementById('groupList').innerHTML = groupList
-    document.getElementById('groupList-side').innerHTML = groupList
+    document.getElementById('groupList-side').innerHTML = groupListSide
   }
 }
 
-//  Rely on PubNub presence to tell us who is currently subscribed to the 'all online users' channel.  
+function generatePredefinedGroupHTML (group, isSide) {
+  var idDelta = ''
+  if (isSide) idDelta = 's'
+  var groupHtml =
+    "<div class='user-with-presence group-row group-row-flex' onclick='launchGroupChat(\"" +
+    group.channel +
+    "\")'><img src='./img/group/" +
+    group.profileIcon +
+    "' class='chat-list-avatar'><div id='unread-" +
+    idDelta +
+    group.channel +
+    "' class='text-caption presence-dot-online-num' style='visibility: hidden'>0</div>"
+
+  if (typeof group.info === 'undefined') {
+    groupHtml += "<div class='group-name'>" + group.name + '</div></div>'
+  } else {
+    groupHtml +=
+      "<div class='group-name group-name-flex'><div>" +
+      group.name +
+      "</div><div class='text-caption'>" +
+      group.info +
+      '</div></div></div>'
+  }
+  return groupHtml
+}
+
+//  Rely on PubNub presence to tell us who is currently subscribed to the 'all online users' channel.
 //  This is called on application launch and the state of who is and isn't online is updated with
 //  presence events.
 function getActiveUsers () {
@@ -347,6 +359,7 @@ function generateOneOneUser (userId, profileUrl, name, isSide) {
     idDelta +
     userId +
     "' class='presence-dot-gray'></span><div id='unread-" +
+    idDelta +
     userId +
     "' class='text-caption presence-dot-online-num' style='visibility: hidden'>0</div><span class='chat-list-name'>" +
     name +
@@ -418,6 +431,8 @@ async function populateChatWindow (channelName) {
   //  Clear message list
   var messageListContents = document.getElementById('messageListContents')
   messageListContents.innerHTML = ''
+  //  If we select a channel to view it, clear all unread messages for this channel
+  setChannelUnreadCounter(channelName, 0)
 
   //  Get the meta data for other users in this chat.  This will be stored locally for efficiency.  If we see a new user after the chat
   //  is loaded, that user's data will be loaded dynamically as needed
@@ -528,7 +543,8 @@ function messageInputSend () {
 async function messageReceived (messageObj, isFromHistory) {
   try {
     if (messageObj.channel != channel) {
-      //  The message has been recevied on a channel we are not currently viewing.  Take no action
+      //  The message has been recevied on a channel we are not currently viewing, update the unread message indicators
+      incrementChannelUnreadCounter(messageObj.channel)
       return
     }
     var messageDiv = ''
@@ -629,7 +645,47 @@ function createMessageReceived (messageObj) {
 
 //  Wrapper function to cater for whether the message had an associated image
 function messageContents (messageData) {
-    return messageData.content.text
+  return messageData.content.text
+}
+
+function incrementChannelUnreadCounter (channel) {
+  //  Just use the span text to track the current value and increment it (indicated by -1)
+  setChannelUnreadCounter(channel, -1)
+}
+
+//  Update unread message indicator for the specified channel
+function setChannelUnreadCounter (channel, count) {
+  try {
+    if (!channel.includes('Private.')) {
+      channel = channel.replace(pubnub.getUserId(), '')
+      channel = channel.replace('DM.', '')
+      channel = channel.replace('&', '')
+    }
+    //  This app is structured to duplicate the JS elements in the side panel for mobile
+    var unreadMessage = document.getElementById('unread-' + channel)
+    var unreadMessageSide = document.getElementById('unread-s' + channel)
+    if (unreadMessage == null) {
+      return
+    }
+    if (count == -1) {
+      //  Increment current count by 1
+      var currentCount = unreadMessage.innerText
+      if (currentCount == '') currentCount = 0
+      else currentCount = parseInt(currentCount)
+      count = currentCount + 1
+    }
+    unreadMessage.innerText = count
+    if (count == 0) {
+      //  No unread messages - hide the unread message counter
+      unreadMessage.style.visibility = 'hidden'
+    } else {
+      unreadMessage.style.visibility = 'visible'
+    }
+    unreadMessageSide.innerText = unreadMessage.innerText
+    unreadMessageSide.style.visibility = unreadMessage.style.visibility
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 var months = [
