@@ -491,7 +491,7 @@ function getGroupMembers () {
           names += ', '
         }
       }
-      names += me.name
+      names += (me.name + " (You)")
       document.getElementById('subheading').innerHTML = names
     } else {
       //  add additional groups here
