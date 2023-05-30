@@ -12,7 +12,7 @@
  * - PubNub uses a flexible channel architecture for communication, endpoints 'subscribe' and 'publish'
  *   messages to channels.  By naming channels in a sensible hierarchy you can enable public and
  *   private groups.  This demo follows the same naming convention a number of our customers use for
- *   'Public.<channel>', 'Private.<channel>' and 'DM.A&B', enabling all possible grouping use cases.
+ *   'Public.<channel>', 'Private.<channel>' and 'DM.A~B', enabling all possible grouping use cases.
  *   In production, you will use Access Manager to restrict access to channels as appropriate but that
  *   is not done in this demo, for readability.
  * - This demo does not encrypt any messages, but you could do this if you chose to do so for additional
@@ -69,7 +69,7 @@ window.addEventListener('beforeunload', function () {
 })
 
 //  Called by page onload()
-function load () {
+async function load () {
   //  Bootstrap application
   userData = {}
   activeTypers = {}
@@ -99,6 +99,19 @@ function load () {
   PubNub.prototype.getUserId = function () {
     return this.getUUID()
   }
+  var accessManagerToken = await requestAccessManagerToken(pubnub.getUserId());
+  if (accessManagerToken == null)
+  {
+    console.log('Error retrieving access manager token')
+  }
+  else
+  {
+    pubnub.setToken(accessManagerToken)
+    //  The server that provides the token for this app is configured to grant a time to live (TTL)
+    //  of 120 minutes (i.e. 2 hours).  IN PRODUCTION, for security reasons, you should set a value 
+    //  between 10 and 60 minutes and refresh the token before it expires.
+    //  For simplicity, this app does not refresh the token
+  }
 
   pubnub.addListener({
     status: statusEvent => {
@@ -123,7 +136,7 @@ function load () {
 
   //  Subscribe to required channels
   pubnub.subscribe({
-    channels: ['DM.*', 'Public.*', 'Group.*'],
+    channels: ['DM.*', 'Public.*'],
     withPresence: true
   })
 
@@ -377,8 +390,8 @@ function removeUser (userId) {
 }
 
 function createDirectChannelName (userId1, userId2) {
-  if (userId1 <= userId2) return 'DM.' + userId1 + '&' + userId2
-  else return 'DM.' + userId2 + '&' + userId1
+  if (userId1 <= userId2) return 'DM.' + userId1 + '~' + userId2
+  else return 'DM.' + userId2 + '~' + userId1
 }
 
 function launchGroupChat (channelName) {
@@ -394,7 +407,7 @@ function launchGroupChat (channelName) {
 
 //  Handler for when a user is selected in the 1:1 chat window.  Display the chat with that user
 async function launchDirectChat (withUserId) {
-  //  Channel name of direct chats is just "DM.[userId1]&[userId2]" where userId1 / userId2 are defined by whoever is lexicographically earliest
+  //  Channel name of direct chats is just "DM.[userId1]~[userId2]" where userId1 / userId2 are defined by whoever is lexicographically earliest
   var userId1 = pubnub.getUserId()
   var userId2 = withUserId
   if (withUserId < pubnub.getUserId()) {
@@ -402,7 +415,7 @@ async function launchDirectChat (withUserId) {
     userId2 = pubnub.getUserId()
   }
 
-  channel = 'DM.' + userId1 + '&' + userId2
+  channel = 'DM.' + userId1 + '~' + userId2
   populateChatWindow(channel)
 
   let myOffCanvas = document.getElementById('chatLeftSide')
@@ -437,7 +450,7 @@ async function populateChatWindow (channelName) {
   //  Get the meta data for other users in this chat.  This will be stored locally for efficiency.  If we see a new user after the chat
   //  is loaded, that user's data will be loaded dynamically as needed
   try {
-    //  Load channel history
+    //  Load channel 
     pubnub
       .fetchMessages({
         channels: [channelName],
@@ -445,9 +458,9 @@ async function populateChatWindow (channelName) {
         includeUUID: true
       })
       .then(async history => {
-        if (history.channels[encodeURIComponent(channelName)] != null) {
+        if (history.channels[channelName.replace('~', '%7E')] != null) {
           for (const historicalMsg of history.channels[
-            encodeURIComponent(channelName)
+            channelName.replace('~', '%7E')
           ]) {
             try {
               historicalMsg.publisher = historicalMsg.uuid
@@ -491,7 +504,7 @@ function getGroupMembers () {
           names += ', '
         }
       }
-      names += (me.name + " (You)")
+      names += me.name + ' (You)'
       document.getElementById('subheading').innerHTML = names
     } else {
       //  add additional groups here
@@ -507,7 +520,7 @@ function lookupRemoteOneOneUser (channelName) {
     var remoteId = channelName
     remoteId = remoteId.replace(pubnub.getUserId(), '')
     remoteId = remoteId.replace('DM.', '')
-    remoteId = remoteId.replace('&', '')
+    remoteId = remoteId.replace('~', '')
     return userData[remoteId].name
   } catch (e) {
     console.log(e)
@@ -659,7 +672,7 @@ function setChannelUnreadCounter (channel, count) {
     if (!channel.includes('Private.')) {
       channel = channel.replace(pubnub.getUserId(), '')
       channel = channel.replace('DM.', '')
-      channel = channel.replace('&', '')
+      channel = channel.replace('~', '')
     }
     //  This app is structured to duplicate the JS elements in the side panel for mobile
     var unreadMessage = document.getElementById('unread-' + channel)
@@ -719,4 +732,25 @@ function convertTimetokenToDate (timetoken) {
     (timestamp.getMinutes() + '').padStart(2, '0') +
     ampm
   )
+}
+
+async function requestAccessManagerToken (userId) {
+  try {
+    const TOKEN_SERVER = 'https://devrel-demos-access-manager.netlify.app/.netlify/functions/api/chatdemo1'
+    const response = await fetch(`${TOKEN_SERVER}/grant`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ UUID: userId })
+    })
+
+    const token = (await response.json()).body.token
+    //console.log('created token: ' + token)
+
+    return token
+  } catch (e) {
+    console.log('failed to create token ' + e)
+    return null
+  }
 }
