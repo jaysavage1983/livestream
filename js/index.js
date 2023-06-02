@@ -114,9 +114,6 @@ async function load () {
   }
 
   pubnub.addListener({
-    status: statusEvent => {
-      //console.log(statusEvent)
-    },
     message: payload => {
       //  A chat message has been received
       messageReceived(payload, false)
