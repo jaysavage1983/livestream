@@ -1,3 +1,6 @@
+body {
+  overflow: hidden; /* Hide scrollbars */
+}
 :root {
     --color-background: #FFFFFF;
     --color-button-dark-text: #FAFAFA;
