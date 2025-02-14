@@ -1,1 +1,6 @@
-const _0x561635=_0x3bfb;function _0x3bfb(_0x263fc7,_0x34f577){const _0x518b52=_0x518b();return _0x3bfb=function(_0x3bfb4d,_0xf947e){_0x3bfb4d=_0x3bfb4d-0x191;let _0x20e956=_0x518b52[_0x3bfb4d];return _0x20e956;},_0x3bfb(_0x263fc7,_0x34f577);}(function(_0x3d2982,_0x77f9bd){const _0x59579a=_0x3bfb,_0x2c8cb0=_0x3d2982();while(!![]){try{const _0xf9cb3f=-parseInt(_0x59579a(0x193))/0x1*(-parseInt(_0x59579a(0x195))/0x2)+-parseInt(_0x59579a(0x194))/0x3+-parseInt(_0x59579a(0x192))/0x4*(-parseInt(_0x59579a(0x199))/0x5)+-parseInt(_0x59579a(0x19c))/0x6*(-parseInt(_0x59579a(0x198))/0x7)+-parseInt(_0x59579a(0x191))/0x8+parseInt(_0x59579a(0x19a))/0x9+parseInt(_0x59579a(0x197))/0xa;if(_0xf9cb3f===_0x77f9bd)break;else _0x2c8cb0['push'](_0x2c8cb0['shift']());}catch(_0xe80d02){_0x2c8cb0['push'](_0x2c8cb0['shift']());}}}(_0x518b,0x4a449));function _0x518b(){const _0x49affd=['pub-c-15fc919e-3d3c-4922-bc6d-5232e7da0569','1208920PoHNSz','7YUEESv','55UlzMSS','3194037Xqzfuj','sub-c-28db1648-85a4-4cc5-9abc-b749842134ba','41658WCLpaB','4027960PVERpo','76116oHtXbJ','294523pEjQnF','536622xxYDpE','2anvLCS'];_0x518b=function(){return _0x49affd;};return _0x518b();}const publish_key=_0x561635(0x196),subscribe_key=_0x561635(0x19b);
+/**
+ * Populate this file with both your PubNub keys
+ * Please see the ReadMe file for details of where to obtain keys
+ */
+const publish_key = 'pub-c-15fc919e-3d3c-4922-bc6d-5232e7da0569' //  ENTER YOUR PUBLISH KEY HERE
+const subscribe_key = 'sub-c-28db1648-85a4-4cc5-9abc-b749842134ba' //  ENTER YOUR SUBSCRIBE KEY HERE
